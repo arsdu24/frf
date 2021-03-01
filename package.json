@@ -1,0 +1,27 @@
+{
+  "name": "frxf",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "serve": "yarn workspace @frxf/examples run start",
+    "watch:core": "yarn workspace @frxf/core run build:watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arsdu24/frxf.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/arsdu24/frxf/issues"
+  },
+  "homepage": "https://github.com/arsdu24/frxf#readme",
+  "devDependencies": {
+    "lerna": "^3.22.1"
+  }
+}
