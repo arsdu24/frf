@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack');
 
 module.exports = {
     mode: 'development',
@@ -12,43 +13,25 @@ module.exports = {
     entry: {
         "detect-changes": path.resolve(__dirname, './src/detect-changes/index.tsx')
     },
+    plugins: [
+        new webpack.ProvidePlugin({
+            fuck: ['@frxf/core', 'default'],
+        }),
+    ],
     module: {
         rules: [
             {
                 test: /\.tsx?$/,
-                loader: "babel-loader",
+                loader: 'ts-loader',
                 exclude: /node_modules/,
                 options: {
-                    plugins: [
-                        [
-                            "babel-plugin-transform-react-jsx",
-                            {
-                                "pragma": "fuck"
-                            }
-                        ],
-                        [
-                            "babel-plugin-jsx-pragmatic",
-                            {
-                                "module": "@frxf/core",
-                                "import": "fuck"
-                            }
-                        ]
-                    ],
-                    presets: [
-                        [
-                            "@babel/preset-typescript",
-                            {
-                                "isTSX": true,
-                                "allExtensions": true
-                            }
-                        ]
-                    ]
+                    transpileOnly: true,
+                    compilerOptions: {
+                        jsx: "react",
+                        jsxFactory: "fuck",
+                        jsxFragmentFactory: "fuck",
+                    }
                 }
-            },
-            {
-                test: /\.tsx?$/,
-                use: 'ts-loader',
-                exclude: /node_modules/,
             },
         ],
     },

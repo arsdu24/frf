@@ -1,37 +1,22 @@
-import {defineComponent} from "@frxf/core";
+import {bind, defineComponent} from "@frxf/core";
 import {timer} from "rxjs";
-import {map} from "rxjs/operators";
 
-const App = defineComponent<{ age: number; firstName: string }>('App', ({content, age$, firstName$}) => {
-    return <div>
+const App = defineComponent<{ age: number; firstName: string }>('App', ({content, age, firstName}) => {
+    const name: string = firstName;
+
+    return <host style={{ margin: 10 }}>
         <br/>
-        <i>{age$}</i>
+        <i>{age}</i>
         <br/>
-        <span>{firstName$}</span>
-        <br/>
-        {content}
-    </div>
+        <div>
+            <span>{name}</span>
+            <br/>
+            {content}
+        </div>
+    </host>
 })
 
-console.log(
-    document.querySelector('#app'),
-    <App
-        age={timer(0, 1000)}
-        firstName={timer(0, 5000).pipe(
-            map(x => `Hello'${x}`)
-        )}
-    >
-        Hello MotherFucker
-    </App>,
-    <div>
-        <br/>
-        <i>12</i>
-        <br/>
-        <span>23</span>
-        <br/>
-        34
-    </div>
-);
+bind(document.querySelector('#app'), <App age={timer(0, 1000)} firstName="hey" />)
 
 if (module['hot']) {
     module['hot'].accept();

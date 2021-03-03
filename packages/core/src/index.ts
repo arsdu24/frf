@@ -1,142 +1,90 @@
-import {AllowedProps, Component, ComponentProps, ComponentRenderer, O} from "./types";
-import {Observable, Subscription} from "rxjs";
-import {filter, map, pluck, shareReplay, switchMap, tap} from "rxjs/operators";
-import {combineAssoc, hot, HotObservable} from "./rx";
-
-export function observeProps<T extends O>(props: T, props$: Observable<T>, track: (key: keyof T, value: unknown) => void): ComponentProps<T> {
-    return new Proxy(props, {
-        get: (target: T, key): any => {
-            const value = target[key as keyof T];
-
-            if (key === '$') {
-                return props$
-            }
-
-            if (`${key as keyof T}`.endsWith('$')) {
-                return props$.pipe(pluck(`${key as keyof T}`.slice(0, -1)))
-            }
-
-            if (key !== 'content') {
-                track(key as keyof T, value)
-            }
-
-            return value;
-        }
-    }) as ComponentProps<T>
-}
-
-export function makeHoc<T extends O>(Component: ({
-    new(props$?: Observable<T>)
-}), propsMapper?: (props: Observable<T>) => Observable<T>): Component<T> {
-    return new Proxy((() => {
-    }) as unknown as Component<T>, {
-        apply(target, that, [props]) {
-            let props$ = combineAssoc<T>(props);
-
-            if (propsMapper) {
-                props$ = propsMapper(props$);
-            }
-
-            return new Component(props$)
-
-        },
-        get(target: Component<T>, prop: keyof Component<T>) {
-            if (prop === 'name') {
-                return Component.name;
-            }
-            if (prop === 'mapProps') {
-
-                return (controller: (props: ComponentProps<T>) => AllowedProps<T> | Observable<T>): Component<T> => {
-                    let propsDeeps: [keyof T, unknown][] = [];
-
-                    return makeHoc(Component, p$ => {
-                        let props$ = p$;
-
-                        if (propsMapper) {
-                            props$ = propsMapper(props$);
-                        }
-
-                        return props$.pipe(
-                            filter((props) => !propsDeeps || !!propsDeeps.find(([key, value]) => props[key] !== value)),
-                            switchMap(props => {
-                                const p$: AllowedProps<T> | Observable<T> = controller(observeProps(props, props$, (key, value) => propsDeeps.push([key, value])));
-
-                                if (p$ instanceof Observable) {
-                                    return p$
-                                }
-
-                                return combineAssoc(p$)
-                            }),
-                            tap(() => propsDeeps = [])
-                        )
-                    })
-                }
-            }
-        }
-    });
-}
+import {Component, ComponentRenderer, HostNode, JSXNode, JSXNodeType, O} from "./types";
+import {Observable, of, Subscription} from "rxjs";
+import {combineAssoc, hot, HotObservable, listenNeeds} from "./rx";
+import {JSXNodeMix} from "./nodes/jsx-mix.node";
+import {makeHoc} from "./factory.hoc";
+import {jsxNativeNodeFactory, reflectPropsMetadata} from "./nodes";
+import { tap } from "rxjs/operators";
 
 export function defineComponent<T extends O>(name: string, renderer: ComponentRenderer<T>): Component<T> {
-    return makeHoc(class extends HTMLElement {
-        private props$?: HotObservable<T>;
-        private subscription?: Subscription;
-        private rendered: boolean;
-        private propsDeeps: [keyof T, unknown][] = [];
-
+    const CL = class extends JSXNodeMix(HTMLElement) implements JSXNode {
         // @ts-ignore
         static get name() {
             return name;
         }
 
-        constructor(props$?: Observable<T>) {
+        constructor(private needsPipe: ($: Observable<T & { content: JSXNode[]; }>) => Observable<JSXNode>) {
             super();
-
-            this.rendered = false;
-
-            if (props$) {
-                this.props$ = hot(props$.pipe(shareReplay(1)));
-            }
         }
 
-        private subscribe() {
+        protected subscribe() {
             if (!this.subscription && this.props$) {
                 this.subscription = this.props$
                     .pipe(
-                        filter((props) => !this.propsDeeps || !!this.propsDeeps.find(([key, value]) => props[key] !== value)),
-                        map(props => observeProps(props, this.props$, (key, value) => this.propsDeeps.push([key, value])))
+                        this.needsPipe,
                     )
                     .subscribe(props => this.tap(props))
             }
         }
 
-        private connectedCallback() {
-            this.rendered = true;
+        private tap(result: JSXNode) {
+            const host: HostNode = result as unknown as HostNode;
 
-            if (this.props$) {
-                this.props$.connect();
-            }
-
-            this.subscribe();
-        }
-
-        private tap(props: ComponentProps<T>) {
-            const r = renderer(props)
-        }
-
-        replaceProps(props$: Observable<T>) {
-            this.props$.replace(props$);
-        }
-
-        disconnectedCallback() {
-            this.rendered = false;
-
-            if (this.subscription) {
-                this.subscription.unsubscribe();
+            if (host.isHost) {
+                this.applyAttributes(host.props);
+                this.attachChildList(host.content);
+            } else {
+                this.attachChildList([result])
             }
         }
-    })
+    };
+
+    Object.defineProperty (CL, 'name', {value: name});
+
+    let eName: string = [...name].map((x,i) => x === x.toUpperCase() ? `${i > 0 ? '-' : ''}${x.toLowerCase()}` : x).join('');
+
+    if (eName.split('-').length < 2) {
+        eName = `x-${eName}`
+    }
+
+    customElements.define(eName, CL);
+
+    return makeHoc(CL, props$ => props$.pipe(
+        listenNeeds(renderer as unknown as (($: T) => O)) as unknown as (($: Observable<T>) => Observable<JSXNode>)
+    ))
 }
 
-export default (x,y,...r) => {
-    return { x, y, r }
+export function bind(node: HTMLElement, component: JSXNode) {
+    node.append(component);
+}
+
+function jsx(type: JSXNodeType, props: O, ...content): JSXNode | HostNode {
+    const arg: O = {...props, content};
+
+    if (type === jsx || type === 'host' ) {
+        return {
+            isHost: true,
+            props,
+            content
+        }
+    }
+
+    if (typeof type === 'function') {
+        return type(arg)
+    }
+
+    const r = jsxNativeNodeFactory(type);
+
+    r.propsMetadata = reflectPropsMetadata(props ?? {});
+    r.handleProps(combineAssoc(arg));
+
+    return r
+}
+
+export default jsx;
+
+declare namespace JSX {
+    interface IntrinsicElements {
+        [elemName: string]: any;
+    }
 }
