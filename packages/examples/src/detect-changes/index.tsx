@@ -1,15 +1,20 @@
-import {bind, defineComponent} from "@frxf/core";
-import {timer} from "rxjs";
+import {bind, defineComponent, state} from "@frxf/core";
+import {of, timer} from "rxjs";
+import {map, tap} from "rxjs/operators";
 
-const App = defineComponent<{ age: number; firstName: string }>('App', ({content, age, firstName}) => {
-    const name: string = firstName;
+const App = defineComponent<{ age: number; firstName: string }>('App', ({content, age$, firstName, $}) => {
+    const [i$, pushI] = state(of(-1));
+    let x = 125
 
     return <host style={{ margin: 10 }}>
         <br/>
-        <i>{age}</i>
+        <i>{age$.pipe(tap(() => {
+            pushI(i => i + 1);
+        }))} {x} {i$}</i>
         <br/>
         <div>
-            <span>{name}</span>
+            <span>{$.pipe(map(({ firstName, age }) => `${age}|${firstName}`))}</span>
+            {firstName}
             <br/>
             {content}
         </div>

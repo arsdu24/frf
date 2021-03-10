@@ -1,6 +1,7 @@
 import {ConnectableObservable, Observable, ReplaySubject, Subject, Subscription} from "rxjs";
 
 export type HotObservable<P> = ConnectableObservable<P> & {
+    readonly $: Observable<P>;
     replace($: Observable<P>): Subscription;
     renew(mapper: ($: Observable<P>) => Observable<P>): Subscription;
 }
@@ -32,6 +33,8 @@ export function hot<P>($: Observable<P>, replay = 0): HotObservable<P> {
     }
 
     $$$.renew = mapper => $$$.replace(mapper($$))
+
+    Object.defineProperty($$$, '$', { get() { return $$ }})
 
     return $$$;
 }

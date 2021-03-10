@@ -1,4 +1,5 @@
 import {Observable} from "rxjs";
+import {Omit} from "type-fest";
 
 export type O = Record<string, unknown>;
 
@@ -10,7 +11,10 @@ export interface JSXNode extends Node {
     handleProps<T extends O>(props: Observable<T>): void;
     isLikeYou(like: JSXNode): boolean;
     propsMetadata: JSXNodePropsMetadata;
+    readonly props$: Observable<{ content: JSXNode[] } & Record<string, unknown>>
 }
+
+export type JSXNodeFacade = Omit<JSXNode, keyof Node>;
 
 export interface JSXNodeFactory {
     new <T extends O>(props?: Observable<T>): JSXNode;

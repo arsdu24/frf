@@ -2,15 +2,18 @@ import {JSXNode, JSXNodePropsMetadata, O} from "../types";
 import {Observable, of, Subscription} from "rxjs";
 import {isSimilar} from "./is-similar.node";
 import {hot, HotObservable} from "../rx";
-import {isJSXNode, isObservable} from "../helpers";
-import {tap} from "rxjs/operators";
+import {detectChanges} from "./detect-changes.node";
+import {isJSXNode} from "../helpers";
 
-export function JSXNodeMix<T extends O & { content: JSXNode[] }>(K: { new (): HTMLElement }) {
+export function JSXNodeMix<T extends O & { content: JSXNode[] }>(K: { new(): HTMLElement }) {
     return class JSXNodeMix extends K implements JSXNode {
-        protected props$: HotObservable<T> = hot(of(), 1);
+        protected props$$: HotObservable<T> = hot(of(), 1);
         protected subscription?: Subscription;
-        protected rendered: boolean = false;
         private _propsMetadata: JSXNodePropsMetadata;
+
+        get props$() {
+            return this.props$$.$;
+        }
 
         get propsMetadata(): JSXNodePropsMetadata {
             return this._propsMetadata || {}
@@ -25,16 +28,21 @@ export function JSXNodeMix<T extends O & { content: JSXNode[] }>(K: { new (): HT
         }
 
         handleProps(props: Observable<unknown>) {
-            this.props$.replace(props as Observable<T>);
+            this.props$$.replace(props as Observable<T>);
+
+            if (this.subscription) {
+                this.subscription.unsubscribe();
+                this.subscription = undefined;
+            }
+
             this.subscribe();
         }
 
         protected subscribe() {
-            if (!this.subscription && this.props$ && this.rendered) {
-                this.subscription = this.props$.pipe(
-                    tap(console.log)
-                )
-                    .subscribe(({ content, ...attributes }) => {
+            if (!this.subscription && this.props$$ && this.isConnected) {
+                this.subscription = this.props$$
+                    .subscribe(({content, ...attributes}) => {
+                        console.log(this, content)
                         this.applyAttributes(attributes);
                         this.attachChildList(content);
                     })
@@ -45,38 +53,68 @@ export function JSXNodeMix<T extends O & { content: JSXNode[] }>(K: { new (): HT
             Object.entries(attributes).forEach(([name, value]) => this.setAttribute(name, `${value}`));
         }
 
-        protected attachChildList(childList: JSXNode[]) {
-            this.innerHTML = '';
+        protected attachChildList(nextChildList: JSXNode[]) {
+            let lastNode: Node;
+            const currentChildList: Node[] = [...this.childNodes as unknown as Node[]];
+            const currentTexts: Node[] = currentChildList.filter((node) => node.nodeName === '#text');
+            const texts: { i: number; prev: Node | undefined; current: string }[] = nextChildList
+                .map((node, i) => ({i, node}))
+                .filter(({node}) => !isJSXNode(node))
+                .map(({i, node}, j) => ({
+                    i, prev: currentTexts[j], current: `${node}`
+                }));
 
-            childList.forEach(c => {
-                if (isJSXNode(c)) {
-                    this.append(c)
+            detectChanges(
+                currentChildList.filter(isJSXNode),
+                nextChildList.filter(isJSXNode)
+            ).forEach((x: Partial<Record<'remove' | 'add' | 'update' | 'from', JSXNode>>) => {
+                if (x?.update && x?.from) {
+                    x.update.handleProps(x.from.props$);
+
+                    lastNode = x.update;
+                }
+
+                if (x?.remove) {
+                    lastNode = x.remove.previousSibling;
+
+                    this.removeChild(x.remove)
+                }
+
+                if (x?.add) {
+                    if (lastNode) {
+                        if (lastNode.nextSibling) {
+                            return this.insertBefore(x.add, lastNode.nextSibling)
+                        }
+                    }
+
+                    this.append(x.add)
+                }
+            });
+
+            texts.map(({i, prev, current}) => {
+                if (prev) {
+                    prev.textContent = current;
                 } else {
-                    const data$: Observable<string> = isObservable(c) ? c : of(c);
-                    const text: Node = document.createTextNode('');
+                    const sibling: Node = this.childNodes.item(i);
 
-                    data$.subscribe(data => text.textContent = data);
-
-                    this.append(text);
+                    this.insertBefore(document.createTextNode(current), sibling);
                 }
             })
+
+            currentTexts.filter(t => !texts.some(({prev}) => prev === t)).forEach(t => this.removeChild(t))
         }
 
         isLikeYou(like: JSXNode): boolean {
             return isSimilar(this, like)
         }
 
-        private connectedCallback() {
-            this.rendered = true;
-
-            this.props$.connect();
+        protected connectedCallback(): void {
+            this.props$$.connect();
 
             this.subscribe();
         }
 
-        private disconnectedCallback() {
-            this.rendered = false;
-
+        protected disconnectedCallback(): void {
             if (this.subscription) {
                 this.subscription.unsubscribe();
             }
