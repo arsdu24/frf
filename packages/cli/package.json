@@ -1,7 +1,7 @@
 {
   "name": "@frxf/cli",
   "version": "0.0.2-alpha.0",
-  "description": "",
+  "description": "Some",
   "main": "dist/index.js",
   "scripts": {
     "prepublishOnly": "tsc"
@@ -23,5 +23,6 @@
     "webpack-dev-server": "^3.11.2"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "gitHead": "5a95c05b03ace37ba11ac4f902ace1a6484b50ea"
 }

@@ -15,5 +15,6 @@
     "rxjs": "^6.6.6",
     "typescript": "^4.2.2"
   },
-  "description": ""
+  "description": "",
+  "gitHead": "5a95c05b03ace37ba11ac4f902ace1a6484b50ea"
 }
