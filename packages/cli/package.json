@@ -1,10 +1,15 @@
 {
   "name": "@frxf/cli",
-  "version": "0.0.5-alpha.0",
+  "version": "0.0.5-alpha.1",
   "description": "Some",
-  "main": "dist/index.js",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "files": ["src"],
   "scripts": {
-    "prepublishOnly": "tsc"
+    "prepublishOnly": "../../pkg.pre-publish.sh",
+    "postpublish": "../../pkg.post-publish.sh",
+    "prebuild": "rimraf dist",
+    "build": "tsc"
   },
   "dependencies": {
     "@babel/cli": "^7.13.0",
@@ -21,6 +26,9 @@
     "webpack": "^5.19.0",
     "webpack-cli": "^4.4.0",
     "webpack-dev-server": "^3.11.2"
+  },
+  "devDependencies": {
+    "rimraf": "^3.0.2"
   },
   "author": "",
   "license": "ISC",

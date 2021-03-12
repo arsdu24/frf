@@ -1,9 +1,13 @@
 {
   "name": "@frxf/core",
   "version": "0.0.1-alpha.0",
-  "main": "index.js",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "files": ["src"],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublishOnly": "../../pkg.pre-publish.sh",
+    "postpublish": "../../pkg.post-publish.sh",
+    "prebuild": "rimraf dist",
     "build": "tsc",
     "build:watch": "tsc --watch"
   },
