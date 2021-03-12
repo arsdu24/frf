@@ -4,7 +4,9 @@
   "description": "Some",
   "main": "src/index.js",
   "types": "src/index.d.ts",
-  "files": ["src"],
+  "files": [
+    "src"
+  ],
   "scripts": {
     "prepublishOnly": "../../pkg.pre-publish.sh",
     "postpublish": "../../pkg.post-publish.sh",
