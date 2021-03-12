@@ -11,10 +11,10 @@
   "license": "ISC",
   "dependencies": {
     "@frxf/cli": "^0.0.4-alpha.0",
-    "@frxf/core": "*",
+    "@frxf/core": "^0.0.1-alpha.0",
     "rxjs": "^6.6.6",
     "typescript": "^4.2.2"
   },
   "description": "",
-  "gitHead": "5495033465f28bdffb91c897438e6db09ad33b35"
+  "gitHead": "0c0aadb98319e0a90a39a6aac9ac259beb8af275"
 }
