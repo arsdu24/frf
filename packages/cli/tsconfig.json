@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "lib": ["DOM"],
+    "target": "ES2019",
+    "outDir": "dist",
+    "jsx": "preserve",
+    "esModuleInterop": true
+  },
+  "include": [
+    "./src"
+  ]
+}
