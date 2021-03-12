@@ -1,6 +1,6 @@
 {
   "name": "@frxf/storybook",
-  "version": "0.0.5-alpha.3",
+  "version": "0.0.5-alpha.4",
   "main": "src/index.js",
   "types": "src/index.d.ts",
   "files": [
@@ -16,8 +16,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@frxf/cli": "^0.0.5-alpha.3",
-    "@frxf/core": "^0.0.5-alpha.3",
+    "@frxf/cli": "^0.0.5-alpha.4",
+    "@frxf/core": "^0.0.5-alpha.4",
     "rxjs": "^6.6.6",
     "typescript": "^4.2.2"
   },
