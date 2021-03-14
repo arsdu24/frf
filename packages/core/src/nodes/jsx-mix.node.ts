@@ -6,7 +6,7 @@ import {detectChanges} from "./detect-changes.node";
 import {isJSXNode} from "../helpers";
 
 export function JSXNodeMix<T extends O & { content: JSXNode[] }>(K: { new(): HTMLElement }) {
-    return class JSXNodeMix extends K implements JSXNode {
+    class JSXNodeMix extends K implements JSXNode {
         protected props$$: HotObservable<T> = hot(of(), 1);
         protected subscription?: Subscription;
         private _propsMetadata: JSXNodePropsMetadata;
@@ -120,4 +120,6 @@ export function JSXNodeMix<T extends O & { content: JSXNode[] }>(K: { new(): HTM
             }
         }
     }
+
+    return JSXNodeMix as { new(): JSXNode }
 }
