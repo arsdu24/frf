@@ -1,6 +1,6 @@
 {
   "name": "@frxf/cli",
-  "version": "0.0.5-alpha.4",
+  "version": "0.0.6",
   "description": "Some",
   "main": "src/index.js",
   "types": "src/index.d.ts",
