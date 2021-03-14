@@ -1,7 +1,7 @@
 import {JSXNode, O} from "../types";
 import {BehaviorSubject, combineLatest, Observable} from "rxjs";
 import {distinctUntilChanged, filter, map, pluck, switchMap, tap} from "rxjs/operators";
-import {combineAssoc} from "./combine-assoc.rx";
+import {AssociativeObservable, combineAssoc} from "./combine-assoc.rx";
 import {isObservable} from "../helpers";
 
 export function state<T>(): [Observable<T | undefined>, ((data: T | ((prev: T | undefined) => T)) => void)]
@@ -109,7 +109,7 @@ export function listenNeeds<T extends O, R extends O | JSXNode>(mapper: (data: T
                     return r$
                 }
 
-                return combineAssoc(r$ as O) as Observable<R>
+                return combineAssoc(r$ as AssociativeObservable<any>) as Observable<R>
             })
         )
     }

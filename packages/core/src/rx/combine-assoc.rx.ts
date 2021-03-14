@@ -8,7 +8,7 @@ export type AssociativeObservable<T extends O> = {
 }
 
 export function combineAssoc<P extends O>(sources: AssociativeObservable<P>): Observable<P> {
-    const keys: (keyof P)[] = Object.keys(sources);
+    const keys: (keyof P)[] = Object.keys(sources) as (keyof P)[];
     const streams: Observable<any>[] = keys
         .map((key): Observable<any> => {
             const value = sources[key];
