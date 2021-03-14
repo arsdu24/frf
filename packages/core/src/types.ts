@@ -1,7 +1,7 @@
 import {Observable} from "rxjs";
 import {Omit} from "type-fest";
 
-export type O = Record<string, unknown>;
+export type O = object;
 
 export type HostNode = { isHost: boolean; props: O; content: JSXNode[] }
 export type JSXNodePropsMetadataType = 'text' | 'stream' | 'node';
